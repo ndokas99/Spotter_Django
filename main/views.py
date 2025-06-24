@@ -24,7 +24,6 @@ class PlanRouteView(APIView):
             total_cost, breakdown = compute_fuel_cost(route["distance_miles"], fuel_stops)
 
             return Response({
-                "distance_miles": round(route["distance_miles"], 2),
                 "route": route["geometry"],
                 "fuel_cost": total_cost,
                 "fuel_stops": breakdown
