@@ -8,7 +8,7 @@ from .services.fuel_optimizer import plan_fuel_stops, compute_fuel_cost
 
 class PlanRouteView(APIView):
     def get(self, request):
-        return Response({"message": "GET received"})
+        return Response({"message": "Use POST method"})
 
     def post(self, request):
         try:
