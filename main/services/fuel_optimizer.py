@@ -37,8 +37,8 @@ def plan_fuel_stops(checkpoints):
         best_station = get_cheapest_station_near(point, stations)
         if best_station:
             fuel_stops.append(best_station)
-        else:
-            print(f"⚠️ No fuel station found near checkpoint at {point[1]}, {point[0]}")
+        #else:
+        #    print(f"⚠️ No fuel station found near checkpoint at {point[1]}, {point[0]}")
 
     return fuel_stops
 
@@ -65,7 +65,7 @@ def compute_fuel_cost(total_miles, fuel_stops, miles_per_gallon=10, tank_range_m
         cost = gallons_to_fill * price_per_gallon
 
         breakdown.append({
-            "station": stop["station_name"],
+            "station": stop["Truckstop Name"],
             "location": (stop["lat"], stop["lng"]),
             "gallons": round(gallons_to_fill, 2),
             "price": price_per_gallon,

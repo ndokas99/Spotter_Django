@@ -28,7 +28,7 @@ def get_coordinates(start, end):
         if resp.status_code == 200:
             return resp.json()
         elif resp.status_code == 202:
-            print(f"Still processing... (Attempt {attempt + 1})")
+            #print(f"Still processing... (Attempt {attempt + 1})")
             time.sleep(TIMEOUT)
         else:
             raise Exception(f"Error while polling: {resp.status_code} - {resp.text}")

@@ -7,13 +7,14 @@ from django.conf import settings
 
 ORIGINAL_FILE = os.path.join(settings.BASE_DIR, 'main', 'data', 'fuel-prices-for-be-assessment.csv')
 GEOCODED_FILE = os.path.join(settings.BASE_DIR, 'main', 'data', 'fuel_prices_geocoded.csv')
+ERRORS = os.path.join(settings.BASE_DIR, 'main', 'data', 'errors.csv')
 
 BATCH_ENDPOINT = "https://api.geoapify.com/v1/batch/geocode/search"
 API_KEY = settings.GEOAPIFY_API_KEY
 
 # Job polling settings
-TIMEOUT = 2             # seconds between polling attempts
-MAX_ATTEMPTS = 15       # number of polling attempts per batch
+TIMEOUT = 3             # seconds between polling attempts
+MAX_ATTEMPTS = 50       # number of polling attempts per batch
 
 _FUEL_STATIONS = None   # In-memory cache
 
@@ -40,21 +41,22 @@ def geocode_batch_geoapify(addresses):
         else:
             raise Exception(f"Error while polling: {resp.status_code} - {resp.text}")
 
-    raise TimeoutError("Geoapify batch job did not complete in time.")
 
+    raise TimeoutError("Geoapify batch job did not complete in time.")
 
 
 def geocode_fuel_prices_bulk():
     """Processes the original CSV and writes a geocoded version with lat/lon."""
-    with open(ORIGINAL_FILE, 'w', newline='', encoding='utf-8') as infile:
+    with open(ORIGINAL_FILE, 'r', newline='', encoding='utf-8') as infile:
         all_rows = list(csv.DictReader(infile))
 
-    batch_size = 10
+    batch_size = 19
     fieldnames = all_rows[0].keys() | {'latitude', 'longitude'}
 
-    with open(GEOCODED_FILE, 'w', newline='', encoding='utf-8') as outfile:
-        writer = csv.DictWriter(outfile, fieldnames=fieldnames)
+    with (open(GEOCODED_FILE, 'w', newline='', encoding='utf-8') as outfile, open(ERRORS, 'w', newline='', encoding='utf-8') as errorfile):
+        writer, errorWriter = csv.DictWriter(outfile, fieldnames=fieldnames), csv.DictWriter(errorfile, fieldnames=all_rows[0].keys())
         writer.writeheader()
+        errorWriter.writeheader()
 
         for i in range(0, len(all_rows), batch_size):
             batch = all_rows[i:i + batch_size]
@@ -68,18 +70,17 @@ def geocode_fuel_prices_bulk():
 
             try:
                 results = geocode_batch_geoapify(addresses)
+                for row, result in zip(batch, results):
+                    if result.get("lat") and result.get("lon"):
+                        row['latitude'], row['longitude'] = result['lat'], result['lon']
+                    else:
+                        row['latitude'], row['longitude'] = '', ''
+                        print(f"Failed to geocode: {row.get('address')}")
+                    writer.writerow(row)
             except Exception as e:
                 print(f"Error during batch geocoding: {e}")
-                results = []
-
-            for row, result in zip(batch, results):
-                if result.get("lat") and result.get("lon"):
-                    row['latitude'], row['longitude'] = result['lat'], result['lon']
-                else:
-                    row['latitude'], row['longitude'] = '', ''
-                    print(f"Failed to geocode: {row.get('address')}")
-
-                writer.writerow(row)
+                for row in batch:
+                    errorWriter.writerow(row)
 
             time.sleep(1.1)
 
@@ -98,10 +99,10 @@ def load_fuel_stations():
         reader = csv.DictReader(f)
         _FUEL_STATIONS = [
             {
-                'station_name': row.get('station_name'),
+                'Truckstop Name': row.get('Truckstop Name'),
                 'lat': float(row['latitude']),
                 'lng': float(row['longitude']),
-                'price': float(row.get('price_per_gallon', 0))
+                'price': float(row.get('Retail Price', 0))
             }
             for row in reader if row.get('latitude') and row.get('longitude')
         ]
