@@ -16,7 +16,7 @@ API_KEY = settings.GEOAPIFY_API_KEY
 TIMEOUT = 3             # seconds between polling attempts
 MAX_ATTEMPTS = 50       # number of polling attempts per batch
 
-_FUEL_STATIONS = None   # In-memory cache
+FUEL_STATIONS = None   # In-memory cache
 
 def geocode_batch_geoapify(addresses):
     """Submits a batch geocoding job and polls for the result."""
@@ -87,9 +87,9 @@ def geocode_fuel_prices_bulk():
 
 def load_fuel_stations():
     """Load geocoded fuel stations into memory."""
-    global _FUEL_STATIONS
-    if _FUEL_STATIONS is not None:
-        return _FUEL_STATIONS
+    global FUEL_STATIONS
+    if FUEL_STATIONS is not None:
+        return FUEL_STATIONS
 
     if not os.path.exists(GEOCODED_FILE):
         print("Geocoded file not found. Starting geocoding...")
@@ -97,7 +97,7 @@ def load_fuel_stations():
 
     with open(GEOCODED_FILE, newline='', encoding='utf-8') as f:
         reader = csv.DictReader(f)
-        _FUEL_STATIONS = [
+        FUEL_STATIONS = [
             {
                 'Truckstop Name': row.get('Truckstop Name'),
                 'lat': float(row['latitude']),
@@ -107,4 +107,4 @@ def load_fuel_stations():
             for row in reader if row.get('latitude') and row.get('longitude')
         ]
 
-    return _FUEL_STATIONS
+    return FUEL_STATIONS

@@ -1,5 +1,5 @@
 from geopy.distance import geodesic
-from main.utils.fuel_loader import _FUEL_STATIONS
+from main.utils.fuel_loader import FUEL_STATIONS
 
 
 def get_cheapest_station_near(checkpoint, stations, radius=20):
@@ -30,7 +30,7 @@ def get_cheapest_station_near(checkpoint, stations, radius=20):
 
 
 def plan_fuel_stops(checkpoints):
-    stations = [] or _FUEL_STATIONS
+    stations = [] or FUEL_STATIONS
     fuel_stops = []
 
     for point in checkpoints:
